@@ -25,23 +25,17 @@ public:
 		while (true) {
 			fd_ = accept(sck_listen, NULL, NULL);
 			while (true) {
-				ret = read(fd_, &request.data(), sizeof(Request::Header));
+				ret = utilities::readn(fd_, &request.data(), sizeof(Request::Header));
 				if (!ret) {
 					break;
 				}
 				switch (request.data().header.type()) {
 				case Request::PLACE:
-					read(
-						fd_,
-						reinterpret_cast<std::uint8_t *>(&request.data()) + sizeof(Request::Header),
-						sizeof(Request::Place) - sizeof(Request::Header));
+					utilities::readn(fd_, &request.data(), sizeof(Request::Place), sizeof(Request::Header));
 					exchange_.process_request(request.data().place);
 					break;
 				case Request::CANCEL:
-					read(
-						fd_,
-						reinterpret_cast<std::uint8_t *>(&request.data()) + sizeof(Request::Header),
-						sizeof(Request::Cancel) - sizeof(Request::Header));
+					utilities::readn(fd_, &request.data(), sizeof(Request::Cancel), sizeof(Request::Header));
 					exchange_.process_request(request.data().cancel);
 					break;
 				}

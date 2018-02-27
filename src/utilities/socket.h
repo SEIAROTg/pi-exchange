@@ -47,6 +47,16 @@ int get_ready_socket(const char *host, const char *port, int socktype, bool is_s
 	}
 	throw std::runtime_error("getaddrinfo returns no data");
 }
+
+int readn(int fd, void *buf, size_t nbytes_total, size_t nbytes_read = 0) {
+	int ret = 1;
+	while (nbytes_read < nbytes_total && ret) {
+		ret = read(fd, reinterpret_cast<char*>(buf) + nbytes_read, nbytes_total - nbytes_read);
+		nbytes_read += ret;
+	}
+	return nbytes_read;
+}
+
 }
 }
 

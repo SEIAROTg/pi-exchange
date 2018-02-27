@@ -61,30 +61,21 @@ public:
 			ret = select(fd_ + 1, &rfds, nullptr, nullptr, &tv);
 			if (ret > 0) {
 				int len;
-				len = read(fd_, &response.data(), sizeof(Response::Header));
+				len = utilities::readn(fd_, &response.data(), sizeof(Response::Header));
 				if (len == 0) {
 					throw std::runtime_error("Connection lost");
 				}
 				switch (response.data().header.type()) {
 				case Response::PLACE:
-					len = read(
-						fd_,
-						reinterpret_cast<std::uint8_t *>(&response.data()) + sizeof(Response::Header),
-						sizeof(Response::Place) - sizeof(Response::Header));
+					len = utilities::readn(fd_, &response.data(), sizeof(Response::Place), sizeof(Response::Header));
 					handler_.on_place(response.data().place);
 					break;
 				case Response::CANCEL:
-					len = read(
-						fd_,
-						reinterpret_cast<std::uint8_t *>(&response.data()) + sizeof(Response::Header),
-						sizeof(Response::Cancel) - sizeof(Response::Header));
+					len = utilities::readn(fd_, &response.data(), sizeof(Response::Cancel), sizeof(Response::Header));
 					handler_.on_cancel(response.data().cancel);
 					break;
 				case Response::MATCH:
-					len = read(
-						fd_,
-						reinterpret_cast<std::uint8_t *>(&response.data()) + sizeof(Response::Header),
-						sizeof(Response::Match) - sizeof(Response::Header));
+					len = utilities::readn(fd_, &response.data(), sizeof(Response::Match), sizeof(Response::Header));
 					handler_.on_match(response.data().match);
 					break;
 				}
