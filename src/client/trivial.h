@@ -19,6 +19,11 @@ public:
 	void close() {
 		socket.close();
 	}
+	void flush() {
+		Request::Flush request;
+		socket.write(&request, sizeof(request));
+		socket.flush();
+	}
 	template <class U>
 	void place(const U &order) {
 		Request::Place request(

@@ -52,7 +52,21 @@ public:
 		return nbytes_total;
 	}
 	int write(const void *buf, size_t nbytes) {
-		return ::write(fd_, buf, nbytes);
+		if (write_buf_size_ + nbytes >= PIEX_OPTION_SOCKET_BUFFER_SIZE) {
+			flush();
+		}
+		if (write_buf_size_ + nbytes >= PIEX_OPTION_SOCKET_BUFFER_SIZE) {
+			::write(fd_, buf, nbytes);
+		} else {
+			std::memcpy(write_buf_ + write_buf_size_, buf, nbytes);
+			write_buf_size_ += nbytes;
+		}
+		return nbytes;
+	}
+	int flush() {
+		size_t nbytes_written = ::write(fd_, write_buf_, write_buf_size_);
+		write_buf_size_ = 0;
+		return nbytes_written;
 	}
 	bool read_ready() {
 		if (read_buf_size_) {
@@ -77,7 +91,9 @@ public:
 private:
 	int fd_ = -1;
 	char read_buf_[PIEX_OPTION_SOCKET_BUFFER_SIZE];
+	char write_buf_[PIEX_OPTION_SOCKET_BUFFER_SIZE];
 	size_t read_buf_cursor_ = 0, read_buf_size_ = 0;
+	size_t write_buf_size_ = 0;
 	static int get_ready_socket(const char *host, const char *port, bool is_server) {
 		int ret;
 		addrinfo hints = {

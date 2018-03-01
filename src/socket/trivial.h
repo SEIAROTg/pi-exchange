@@ -42,6 +42,9 @@ public:
 	int write(const void *buf, size_t nbytes) {
 		return ::write(fd_, buf, nbytes);
 	}
+	int flush() {
+		return 0;
+	}
 	bool read_ready() {
 		fd_set rfds;
 		struct timeval tv = {0, 0};

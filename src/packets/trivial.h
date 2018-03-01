@@ -7,6 +7,7 @@ public:
 	enum Type : std::uint8_t {
 		PLACE,
 		CANCEL,
+		FLUSH,
 	};
 
 	enum OrderType : std::uint8_t {
@@ -74,10 +75,18 @@ public:
 		Order::IdType id_;
 	};
 
+	class Flush {
+	public:
+		Flush() : header_(FLUSH) {};
+	private:
+		Header header_;
+	};
+
 	using Data = union {
 		Header header;
 		Place place;
 		Cancel cancel;
+		Flush flush;
 	};
 
 	Data &data() {

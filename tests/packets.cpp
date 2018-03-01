@@ -43,6 +43,12 @@ TEST_F(Request, cancel_reinterpret) {
 	EXPECT_EQ(reinterpreted_request, request);
 }
 
+TEST_F(Request, flush_reinterpret) {
+	piex::Request::Flush request;
+	reinterpret_header(request);
+	EXPECT_EQ(buf.data().header.type(), piex::Request::FLUSH);
+}
+
 TEST_F(Response, place_reinterpret) {
 	piex::Response::Place response(true, 222);
 	reinterpret_header(response);

@@ -50,6 +50,7 @@ protected:
 TEST_F(Server, place) {
 	client.buy({0, 100, 1});
 	client.sell({1, 200, 1});
+	client.flush();
 	wait();
 	client.receive_responses();
 
@@ -62,6 +63,7 @@ TEST_F(Server, place) {
 TEST_F(Server, match) {
 	client.buy({0, 200, 1});
 	client.sell({1, 100, 2});
+	client.flush();
 	wait();
 	client.receive_responses();
 
@@ -76,6 +78,7 @@ TEST_F(Server, cancel) {
 	client.sell({0, 100, 1});
 	client.cancel_sell(0);
 	client.cancel_sell(0);
+	client.flush();
 	wait();
 	client.receive_responses();
 

@@ -60,6 +60,7 @@ public:
 			send_request();
 			client.receive_responses();
 		}
+		client.flush();
 		while (pending_requests) {
 			client.receive_responses();
 		}

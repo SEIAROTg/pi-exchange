@@ -32,6 +32,9 @@ public:
 					socket->read(&request.data(), sizeof(Request::Cancel), sizeof(Request::Header));
 					exchange_.process_request(request.data().cancel);
 					break;
+				case Request::FLUSH:
+					socket->flush();
+					break;
 				}
 			}
 		}
