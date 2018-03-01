@@ -17,7 +17,7 @@ using piex::Response;
 
 class Benchmark {
 public:
-	Benchmark() : gen(0), client(*this) {}
+	Benchmark(std::uint64_t book_size) : expected_book_size(book_size), gen(0), client(*this) {}
 	void on_place(const Response::Place &response) {
 		stats_.add_order(elapsed_time(place_time[response.id()]));
 		place_time.erase(response.id());
@@ -57,21 +57,19 @@ public:
 		client.connect(host, port);
 		stats_.start();
 		while (total_requests < num_of_requests) {
-			if (pending_requests < REQUEST_WINDOW_SIZE) {
-				send_request();
-			}
+			send_request();
 			client.receive_responses();
 		}
 		while (pending_requests) {
 			client.receive_responses();
 		}
 		stats_.end();
+		client.close();
 	}
 	const Stats &stats() const {
 		return stats_;
 	}
 private:
-	constexpr static int REQUEST_WINDOW_SIZE = 100;
 	constexpr static int INITIAL_PRICE = 1000000;
 	template <class T>
 	struct Orders {
@@ -80,6 +78,7 @@ private:
 		std::set<T> by_price;
 	};
 
+	std::uint64_t expected_book_size;
 	std::mt19937_64 gen;
 	std::uint64_t pending_requests = 0;
 	std::uint64_t total_requests = 0;
@@ -125,24 +124,39 @@ private:
 		static Order::IdType id = 0;
 		return id++;
 	}
+	// true for buy, false for sell
+	bool random_buysell() {
+		auto buy_size = std::get<Orders<BuyOrder>>(orders).by_id.size();
+		auto sell_size = std::get<Orders<SellOrder>>(orders).by_id.size();
+		std::uniform_int_distribution<unsigned> dis(0, buy_size + sell_size);
+		return dis(gen) < sell_size;
+	}
+	// true for increasing orders, false for decreasing orders
+	int random_action() {
+		auto buy_size = std::get<Orders<BuyOrder>>(orders).by_id.size();
+		auto sell_size = std::get<Orders<SellOrder>>(orders).by_id.size();
+		std::uniform_int_distribution<unsigned> dis(0, buy_size + sell_size + expected_book_size);
+		return dis(gen) < expected_book_size;
+	}
+	// 1/4 probability to place matched orders
+	bool random_action_match() {
+		static std::uniform_int_distribution<> dis(0, 3);
+		return dis(gen) == 0;
+	}
 	void send_request() {
 		++pending_requests;
 		++total_requests;
-		static std::uniform_int_distribution<> random_action(0, 3);
-		static std::uniform_int_distribution<> random_buysell(0, 1);
-		int buysell = random_buysell(gen);
-		switch (random_action(gen)) {
-		case 0: // new
-			[[fallthrough]];
-		case 1:
-			buysell == 0 ? place_new<BuyOrder>() : place_new<SellOrder>();
-			break;
-		case 2: // match
-			buysell == 0 ? place_match<BuyOrder>() : place_match<SellOrder>();
-			break;
-		case 3: // cancel
-			buysell == 0 ? cancel<BuyOrder>() : cancel<SellOrder>();
-			break;
+		bool buysell = random_buysell();
+		if (random_action_match()) {
+			// place match
+			buysell ? place_match<BuyOrder>() : place_match<SellOrder>();
+		} else if (random_action()) {
+			// place new
+			buysell ? place_new<BuyOrder>() : place_new<SellOrder>();
+		} else {
+			// cancel
+			// opposite probability distribution from place
+			!buysell ? cancel<BuyOrder>() : cancel<SellOrder>();
 		}
 	}
 	template <class T>
