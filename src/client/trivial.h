@@ -1,12 +1,9 @@
-#include <unistd.h>
 #include <cerrno>
-#include <sys/socket.h>
-#include <sys/select.h>
 #include <cstdint>
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
-#include "src/utilities/socket.h"
+#include "src/socket/socket.h"
 #include "src/packets/packets.h"
 #include "src/order/order.h"
 
@@ -17,10 +14,10 @@ public:
 	using EventHandlerType = T;
 	explicit Client(EventHandlerType &handler) : handler_(handler) {}
 	void connect(const char *host, const char *port) {
-		fd_ = utilities::get_ready_socket(host, port, SOCK_STREAM, false);
+		socket.connect(host, port);
 	}
 	void close() {
-		::close(fd_);
+		socket.close();
 	}
 	template <class U>
 	void place(const U &order) {
@@ -29,7 +26,7 @@ public:
 			order.id(),
 			order.price(),
 			order.quantity());
-		write(fd_, &request, sizeof(request));
+		socket.write(&request, sizeof(request));
 	}
 	void buy(const BuyOrder &order) {
 		place(order);
@@ -42,7 +39,7 @@ public:
 		Request::Cancel request(
 			std::is_same<U, BuyOrder>() ? Request::BUY : Request::SELL,
 			id);
-		write(fd_, &request, sizeof(request));
+		socket.write(&request, sizeof(request));
 	}
 	void cancel_buy(const Order::IdType &id) {
 		cancel<BuyOrder>(id);
@@ -53,39 +50,29 @@ public:
 	void receive_responses() {
 		std::uint8_t buf[sizeof(Response)];
 		Response &response = *reinterpret_cast<Response *>(buf);
-		int ret;
-		do {
-			struct timeval tv = {0, 0};
-			FD_ZERO(&rfds);
-			FD_SET(fd_, &rfds);
-			ret = select(fd_ + 1, &rfds, nullptr, nullptr, &tv);
-			if (ret > 0) {
-				int len;
-				len = utilities::readn(fd_, &response.data(), sizeof(Response::Header));
-				if (len == 0) {
-					throw std::runtime_error("Connection lost");
-				}
-				switch (response.data().header.type()) {
-				case Response::PLACE:
-					len = utilities::readn(fd_, &response.data(), sizeof(Response::Place), sizeof(Response::Header));
-					handler_.on_place(response.data().place);
-					break;
-				case Response::CANCEL:
-					len = utilities::readn(fd_, &response.data(), sizeof(Response::Cancel), sizeof(Response::Header));
-					handler_.on_cancel(response.data().cancel);
-					break;
-				case Response::MATCH:
-					len = utilities::readn(fd_, &response.data(), sizeof(Response::Match), sizeof(Response::Header));
-					handler_.on_match(response.data().match);
-					break;
-				}
+		while (socket.read_ready()) {
+			int len = socket.read(&response.data(), sizeof(Response::Header));
+			if (len == 0) {
+				throw std::runtime_error("Connection lost");
 			}
-		} while (ret > 0);
+			switch (response.data().header.type()) {
+			case Response::PLACE:
+				len = socket.read(&response.data(), sizeof(Response::Place), sizeof(Response::Header));
+				handler_.on_place(response.data().place);
+				break;
+			case Response::CANCEL:
+				len = socket.read(&response.data(), sizeof(Response::Cancel), sizeof(Response::Header));
+				handler_.on_cancel(response.data().cancel);
+				break;
+			case Response::MATCH:
+				len = socket.read(&response.data(), sizeof(Response::Match), sizeof(Response::Header));
+				handler_.on_match(response.data().match);
+				break;
+			}
+		}
 	}
-
 private:
-	fd_set rfds;
 	EventHandlerType &handler_;
-	int fd_ = -1;
+	Socket socket;
 };
 }
