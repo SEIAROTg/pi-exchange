@@ -25,17 +25,13 @@ public:
 	const PriceType &price() const {
 		return price_;
 	}
-	QuantityType &quantity() {
+	QuantityType &quantity() const {
 		return quantity_;
 	}
-	const QuantityType &quantity() const {
-		return quantity_;
-	}
-
 private:
 	IdType id_;
 	PriceType price_;
-	QuantityType quantity_;
+	mutable QuantityType quantity_;
 };
 
 class BuyOrder;
