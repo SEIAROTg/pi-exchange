@@ -47,6 +47,47 @@ public:
 	bool ready_write() {
 		return size_ < PIEX_OPTION_SOCKET_BUFFER_SIZE || terminated_;
 	}
+	int read(std::function<int(std::size_t, std::size_t)> op) {
+		int offset, len;
+		{
+			std::unique_lock<std::mutex> lock(mutex_);
+			if (!ready_read()) {
+				data_available_.wait(lock, [this] { return ready_read(); });
+			}
+			if (terminated_) {
+				return 0;
+			}
+			offset = cursor_;
+			std::tie(offset, len) = data_interval();
+		}
+		int ret = op(offset, len);
+		if (ret > 0) {
+			std::lock_guard<std::mutex> lock(mutex_);
+			cursor_ += ret;
+			cursor_ %= PIEX_OPTION_SOCKET_BUFFER_SIZE;
+			size_ -= ret;
+		}
+		return ret;
+	}
+	int write(std::function<int(std::size_t, std::size_t)> op) {
+		int offset, len;
+		{
+			std::unique_lock<std::mutex> lock(mutex_);
+			if (!ready_write()) {
+				space_available_.wait(lock, [this] { return ready_write(); });
+			}
+			if (terminated_) {
+				return 0;
+			}
+			std::tie(offset, len) = space_interval();
+		}
+		int ret = op(offset, len);
+		if (ret > 0) {
+			std::lock_guard<std::mutex> lock(mutex_);
+			size_ += ret;
+		}
+		return ret;
+	}
 	int fd_ = -1;
 	char buffer_[PIEX_OPTION_SOCKET_BUFFER_SIZE];
 	std::size_t cursor_ = 0, size_ = 0;
@@ -69,24 +110,11 @@ public:
 private:
 	void body() {
 		while (true) {
-			int offset, len;
-			{
-				std::unique_lock<std::mutex> lock(mutex_);
-				if (!ready_write()) {
-					space_available_.wait(lock, [this] { return ready_write(); });
-				}
-				if (terminated_) {
-					return;
-				}
-				std::tie(offset, len) = space_interval();
-			}
-			int ret = ::read(fd_, buffer_ + offset, len);
+			int ret = write([this](std::size_t offset, std::size_t len) {
+				return ::read(fd_, buffer_ + offset, len);
+			});
 			if (ret <= 0) {
 				return;
-			}
-			{
-				std::lock_guard<std::mutex> lock(mutex_);
-				size_ += ret;
 			}
 			data_available_.notify_one();
 		}
@@ -103,27 +131,11 @@ public:
 private:
 	void body() {
 		while (true) {
-			int offset, len;
-			{
-				std::unique_lock<std::mutex> lock(mutex_);
-				if (!ready_read()) {
-					data_available_.wait(lock, [this] { return ready_read(); });
-				}
-				if (terminated_) {
-					return;
-				}
-				offset = cursor_;
-				std::tie(offset, len) = data_interval();
-			}
-			int ret = ::write(fd_, buffer_ + offset, len);
+			int ret = read([this](std::size_t offset, std::size_t len) {
+				return ::write(fd_, buffer_ + offset, len);
+			});
 			if (ret <= 0) {
 				return;
-			}
-			{
-				std::lock_guard<std::mutex> lock(mutex_);
-				cursor_ += ret;
-				cursor_ %= PIEX_OPTION_SOCKET_BUFFER_SIZE;
-				size_ -= ret;
 			}
 			space_available_.notify_one();
 		}
@@ -158,55 +170,34 @@ public:
 	}
 	int read(void *buf, std::size_t nbytes_total, std::size_t nbytes_read = 0) {
 		while (nbytes_read < nbytes_total) {
-			std::size_t offset, len;
-			{
-				std::unique_lock<std::mutex> lock(reader_->mutex_);
-				if (!reader_->ready_read()) {
-					reader_->data_available_.wait(lock, [this] { return reader_->ready_read(); });
-				}
-				if (reader_->terminated_) {
-					return 0;
-				}
-				offset = reader_->cursor_;
-				std::tie(offset, len) = reader_->data_interval();
+			int ret = reader_->read([this, &buf, &nbytes_total, &nbytes_read](std::size_t offset, std::size_t len) {
+				std::size_t nbytes_to_copy = std::min(len, nbytes_total - nbytes_read);
+				std::memcpy(static_cast<char *>(buf) + nbytes_read, reader_->buffer_ + offset, nbytes_to_copy);
+				return nbytes_to_copy;
+			});
+			if (ret <= 0) {
+				break;
 			}
-			std::size_t nbytes_to_copy = std::min(len, nbytes_total - nbytes_read);
-			std::memcpy(static_cast<char *>(buf) + nbytes_read, reader_->buffer_ + offset, nbytes_to_copy);
-			{
-				std::lock_guard<std::mutex> lock(reader_->mutex_);
-				reader_->cursor_ += nbytes_to_copy;
-				reader_->cursor_ %= PIEX_OPTION_SOCKET_BUFFER_SIZE;
-				reader_->size_ -= nbytes_to_copy;
-			}
+			nbytes_read += ret;
 			reader_->space_available_.notify_one();
-			nbytes_read += nbytes_to_copy;
 		}
-		return nbytes_total;
+		return nbytes_read;
 	}
-	int write(const void *buf, std::size_t nbytes) {
+	int write(const void *buf, std::size_t nbytes_total) {
 		std::size_t nbytes_written = 0;
-		while (nbytes_written < nbytes) {
-			std::size_t offset, len;
-			{
-				std::unique_lock<std::mutex> lock(writer_->mutex_);
-				if (!writer_->ready_write()) {
-					writer_->space_available_.wait(lock, [this] { return writer_->ready_write(); });
-				}
-				if (writer_->terminated_) {
-					return 0;
-				}
-				std::tie(offset, len) = writer_->space_interval();
+		while (nbytes_written < nbytes_total) {
+			int ret = writer_->write([this, &buf, &nbytes_total, &nbytes_written](std::size_t offset, std::size_t len) {
+				std::size_t nbytes_to_copy = std::min(len, nbytes_total - nbytes_written);
+				std::memcpy(writer_->buffer_ + offset, static_cast<const char *>(buf) + nbytes_written, nbytes_to_copy);
+				return nbytes_to_copy;
+			});
+			if (ret <= 0) {
+				break;
 			}
-			std::size_t nbytes_to_copy = std::min(len, nbytes - nbytes_written);
-			std::memcpy(writer_->buffer_ + offset, static_cast<const char *>(buf) + nbytes_written, nbytes_to_copy);
-			{
-				std::lock_guard<std::mutex> lock(writer_->mutex_);
-				writer_->size_ += nbytes_to_copy;
-			}
+			nbytes_written += ret;
 			writer_->data_available_.notify_one();
-			nbytes_written += nbytes_to_copy;
 		}
-		return nbytes;
+		return nbytes_written;
 	}
 	int flush() {
 		return 0;
