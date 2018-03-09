@@ -42,19 +42,17 @@ public:
 		return {cursor_, len};
 	}
 	bool ready_read() {
-		return size_ > 0 || terminated_;
+		return size_ > 0;
 	}
 	bool ready_write() {
-		return size_ < PIEX_OPTION_SOCKET_BUFFER_SIZE || terminated_;
+		return size_ < PIEX_OPTION_SOCKET_BUFFER_SIZE;
 	}
 	int read(std::function<int(std::size_t, std::size_t)> op) {
 		int offset, len;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);
+			data_available_.wait(lock, [this] { return ready_read() || terminated_; });
 			if (!ready_read()) {
-				data_available_.wait(lock, [this] { return ready_read(); });
-			}
-			if (terminated_) {
 				return 0;
 			}
 			offset = cursor_;
@@ -73,10 +71,8 @@ public:
 		int offset, len;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);
+			space_available_.wait(lock, [this] { return ready_write() || terminated_; });
 			if (!ready_write()) {
-				space_available_.wait(lock, [this] { return ready_write(); });
-			}
-			if (terminated_) {
 				return 0;
 			}
 			std::tie(offset, len) = space_interval();
@@ -134,7 +130,7 @@ private:
 			int ret = read([this](std::size_t offset, std::size_t len) {
 				return ::write(fd_, buffer_ + offset, len);
 			});
-			if (ret <= 0) {
+			if (ret <= 0 || terminated_) {
 				return;
 			}
 			space_available_.notify_one();

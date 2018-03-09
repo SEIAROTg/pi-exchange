@@ -24,10 +24,8 @@ public:
 	std::pair<std::size_t, std::size_t> lock(std::size_t n) {
 		if (size_.load() == 0) {
 			std::unique_lock<std::mutex> lock(*mutex_);
-			if (!terminated_ && size_.load() == 0) {
-				nonempty_.wait(lock, [this] { return terminated_ || size_.load() > 0; });
-			}
-			if (terminated_) {
+			nonempty_.wait(lock, [this] { return terminated_ || size_.load() > 0; });
+			if (size_.load() == 0) {
 				return {0, 0};
 			}
 		}
@@ -49,7 +47,7 @@ public:
 	std::size_t lock(std::function<int(std::size_t, std::size_t)> op) {
 		size_t offset, len;
 		std::tie(offset, len) = lock(PIEX_OPTION_SOCKET_BUFFER_SIZE);
-		if (terminated_) {
+		if (len == 0) {
 			return 0;
 		}
 		int ret = op(offset, len);
