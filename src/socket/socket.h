@@ -9,6 +9,8 @@
 	#include "src/socket/multithreaded.h"
 #elif PIEX_OPTION_SOCKET == PIEX_OPTION_SOCKET_MULTITHREADED_ATOMIC
 	#include "src/socket/multithreaded_atomic.h"
+#elif PIEX_OPTION_SOCKET == PIEX_OPTION_SOCKET_MULTITHREADED_ATOMIC_FLUSH
+	#include "src/socket/multithreaded_atomic_flush.h"
 #else
 	#include "src/socket/trivial.h"
 #endif
