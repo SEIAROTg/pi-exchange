@@ -24,7 +24,8 @@ public:
 		size_(size) {}
 	Interval() : Interval(0, 0) {}
 	// wait until interval size >= n or flushed, and lock the whole interval or an interval with size flush_size
-	ssize_t lock_at_least(std::size_t n, std::function<ssize_t(std::size_t, std::size_t)> op) {
+	template <class F>
+	ssize_t lock_at_least(std::size_t n, const F &op) {
 		if (size_.load() < n && to_flush_ == 0 && !terminated_) {
 			std::unique_lock<std::mutex> lock(mutex_);
 			waiting_size_ = n;
@@ -57,7 +58,8 @@ public:
 		}
 		return ret;
 	}
-	ssize_t lock_exact(std::size_t n, std::function<ssize_t(std::size_t, std::size_t)> op) {
+	template <class F>
+	ssize_t lock_exact(std::size_t n, const F &op) {
 		if (size_.load() < n && !terminated_) {
 			std::unique_lock<std::mutex> lock(mutex_);
 			waiting_size_ = n;

@@ -47,7 +47,8 @@ public:
 	bool ready_write() {
 		return size_ < PIEX_OPTION_SOCKET_BUFFER_SIZE;
 	}
-	int read(std::function<int(std::size_t, std::size_t)> op) {
+	template <class F>
+	int read(const F &op) {
 		int offset, len;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);
@@ -67,7 +68,8 @@ public:
 		}
 		return ret;
 	}
-	int write(std::function<int(std::size_t, std::size_t)> op) {
+	template <class F>
+	int write(const F &op) {
 		int offset, len;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);

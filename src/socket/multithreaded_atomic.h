@@ -21,7 +21,7 @@ class Interval {
 public:
 	Interval(std::mutex *mutex, std::size_t cursor, std::size_t size) : mutex_(mutex), cursor_(cursor), size_(size) {}
 	Interval(std::mutex *mutex) : Interval(mutex, 0, 0) {}
-	std::pair<std::size_t, std::size_t> lock(std::size_t n) {
+	std::pair<std::size_t, std::size_t> lock_interval(std::size_t n) {
 		if (size_.load() == 0) {
 			std::unique_lock<std::mutex> lock(*mutex_);
 			nonempty_.wait(lock, [this] { return terminated_ || size_.load() > 0; });
@@ -44,9 +44,10 @@ public:
 		cursor_ %= PIEX_OPTION_SOCKET_BUFFER_SIZE;
 		size_ += n;
 	}
-	std::size_t lock(std::function<int(std::size_t, std::size_t)> op) {
+	template <class F>
+	std::size_t lock(const F &op) {
 		size_t offset, len;
-		std::tie(offset, len) = lock(PIEX_OPTION_SOCKET_BUFFER_SIZE);
+		std::tie(offset, len) = lock_interval(PIEX_OPTION_SOCKET_BUFFER_SIZE);
 		if (len == 0) {
 			return 0;
 		}
