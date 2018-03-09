@@ -52,28 +52,31 @@ public:
 	void cancel_sell(const Order::IdType &id) {
 		cancel<SellOrder>(id);
 	}
-	void receive_responses() {
+	void receive_response() {
 		std::uint8_t buf[sizeof(Response)];
 		Response &response = *reinterpret_cast<Response *>(buf);
+		int len = socket.read(&response.data(), sizeof(Response::Header));
+		if (len == 0) {
+			throw std::runtime_error("Connection lost");
+		}
+		switch (response.data().header.type()) {
+		case Response::PLACE:
+			len = socket.read(&response.data(), sizeof(Response::Place), sizeof(Response::Header));
+			handler_.on_place(response.data().place);
+			break;
+		case Response::CANCEL:
+			len = socket.read(&response.data(), sizeof(Response::Cancel), sizeof(Response::Header));
+			handler_.on_cancel(response.data().cancel);
+			break;
+		case Response::MATCH:
+			len = socket.read(&response.data(), sizeof(Response::Match), sizeof(Response::Header));
+			handler_.on_match(response.data().match);
+			break;
+		}
+	}
+	void try_receive_responses() {
 		while (socket.read_ready()) {
-			int len = socket.read(&response.data(), sizeof(Response::Header));
-			if (len == 0) {
-				throw std::runtime_error("Connection lost");
-			}
-			switch (response.data().header.type()) {
-			case Response::PLACE:
-				len = socket.read(&response.data(), sizeof(Response::Place), sizeof(Response::Header));
-				handler_.on_place(response.data().place);
-				break;
-			case Response::CANCEL:
-				len = socket.read(&response.data(), sizeof(Response::Cancel), sizeof(Response::Header));
-				handler_.on_cancel(response.data().cancel);
-				break;
-			case Response::MATCH:
-				len = socket.read(&response.data(), sizeof(Response::Match), sizeof(Response::Header));
-				handler_.on_match(response.data().match);
-				break;
-			}
+			receive_response();
 		}
 	}
 private:

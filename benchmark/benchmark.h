@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <chrono>
+#include "config.h"
 #include "src/client/client.h"
 #include "src/packets/packets.h"
 #include "src/order/order.h"
@@ -57,12 +58,15 @@ public:
 		client.connect(host, port);
 		stats_.start();
 		while (total_requests < num_of_requests) {
+			while (pending_requests > PIEX_OPTION_BENCHMARK_REQUEST_WINDOW_SIZE) {
+				client.receive_response();
+			}
 			send_request();
-			client.receive_responses();
+			client.try_receive_responses();
 		}
 		client.flush();
 		while (pending_requests) {
-			client.receive_responses();
+			client.receive_response();
 		}
 		stats_.end();
 		client.close();

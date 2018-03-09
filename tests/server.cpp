@@ -52,7 +52,7 @@ TEST_F(Server, place) {
 	client.sell({1, 200, 1});
 	client.flush();
 	wait();
-	client.receive_responses();
+	client.try_receive_responses();
 
 	ASSERT_THAT(responses, testing::ElementsAre(
 		piex::Response::Place(true, 0),
@@ -65,7 +65,7 @@ TEST_F(Server, match) {
 	client.sell({1, 100, 2});
 	client.flush();
 	wait();
-	client.receive_responses();
+	client.try_receive_responses();
 
 	ASSERT_THAT(responses, testing::ElementsAre(
 		piex::Response::Place(true, 0),
@@ -80,7 +80,7 @@ TEST_F(Server, cancel) {
 	client.cancel_sell(0);
 	client.flush();
 	wait();
-	client.receive_responses();
+	client.try_receive_responses();
 
 	ASSERT_THAT(responses, testing::ElementsAre(
 		piex::Response::Place(true, 0),
