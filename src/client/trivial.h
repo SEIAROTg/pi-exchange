@@ -19,9 +19,13 @@ public:
 	void close() {
 		socket.close();
 	}
+	template <class R>
+	void process(const R &request) {
+		socket.write(&request, sizeof(request));
+	}
 	void flush() {
 		Request::Flush request;
-		socket.write(&request, sizeof(request));
+		process(request);
 		socket.flush();
 	}
 	template <class U>
@@ -31,7 +35,7 @@ public:
 			order.id(),
 			order.price(),
 			order.quantity());
-		socket.write(&request, sizeof(request));
+		process(request);
 	}
 	void buy(const BuyOrder &order) {
 		place(order);
@@ -44,7 +48,7 @@ public:
 		Request::Cancel request(
 			std::is_same<U, BuyOrder>() ? Request::BUY : Request::SELL,
 			id);
-		socket.write(&request, sizeof(request));
+		process(request);
 	}
 	void cancel_buy(const Order::IdType &id) {
 		cancel<BuyOrder>(id);

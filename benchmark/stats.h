@@ -13,7 +13,7 @@ public:
 	void start() {
 		start_time = std::chrono::high_resolution_clock::now();
 	}
-	void add_order(std::uint64_t latency) {
+	void add_entry(std::uint64_t latency) {
 		max_latency = std::max(max_latency, latency);
 		if (latency >= LATENCY_VALUES) {
 			latency = LATENCY_VALUES;
