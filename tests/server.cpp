@@ -11,6 +11,15 @@
 #include "src/client/client.h"
 #include "src/packets/packets.h"
 
+#ifdef PIEX_DEBUG
+extern "C" void __gcov_flush();
+
+static void signal_handler(int) {
+	__gcov_flush();
+	_exit(0);
+}
+#endif
+
 class Server : public ::testing::Test {
 public:
 	Server() : client(*this) {}
@@ -27,6 +36,9 @@ protected:
 	virtual void SetUp() {
 		pid = fork();
 		if (!pid) {
+#ifdef PIEX_DEBUG
+			signal(SIGINT, signal_handler);
+#endif
 			piex::Server server;
 			server.listen("127.0.0.1", "3000");
 		} else {
