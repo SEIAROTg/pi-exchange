@@ -1,0 +1,42 @@
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      env:
+        - CXX="$HOME/llvm/bin/clang++"
+        - CPPFLAGS="-I $HOME/llvm/include/c++/v1"
+        - LD_LIBRARY_PATH="$HOME/llvm/lib":$LD_LIBRARY_PATH
+      addons:
+        apt:
+          packages:
+            - cmake
+
+before_install:
+  - wget http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O llvm.tar.xz
+  - mkdir "$HOME/llvm"
+  - tar xf llvm.tar.xz -C "$HOME/llvm" --strip-components=1
+  - export PATH=$HOME/llvm/bin:$PATH
+  - pip install --user cpp-coveralls
+
+install: true
+
+script:
+  - cd $TRAVIS_BUILD_DIR
+  - mkdir -p build/debug
+  - cd build/debug
+  - cmake -DCMAKE_BUILD_TYPE=Debug ../..
+  - make
+  - make tests
+  - ./tests
+
+  - cd $TRAVIS_BUILD_DIR
+  - mkdir -p build/release
+  - cd build/release
+  - cmake -DCMAKE_BUILD_TYPE=Release ../..
+  - make
+  - make tests
+  - ./tests
+
+after_success:
+  - cd $TRAVIS_BUILD_DIR
+  - coveralls --root . --build-root build/debug --include src --gcov "$HOME/llvm/bin/llvm-cov gcov" --gcov-options '\-lp'
