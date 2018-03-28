@@ -1,7 +1,7 @@
 #ifndef PIEX_HEADER_SOCKET
 #define PIEX_HEADER_SOCKET
 
-#include "config.h"
+#include "config/config.h"
 
 #if PIEX_OPTION_SOCKET == PIEX_OPTION_SOCKET_BUFFERED
 	#include "src/socket/buffered.h"

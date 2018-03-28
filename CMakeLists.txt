@@ -21,9 +21,11 @@ add_executable(benchmark EXCLUDE_FROM_ALL benchmark/main.cpp)
 
 add_executable(tests EXCLUDE_FROM_ALL tests/order.cpp tests/order-book.cpp tests/exchange.cpp tests/packets.cpp tests/socket.cpp tests/server.cpp)
 target_link_libraries(tests gtest_main gmock)
+
 if (CMAKE_BUILD_TYPE MATCHES Debug)
 	target_compile_options(tests PRIVATE --coverage)
 	target_link_libraries(tests --coverage)
+	add_custom_command(TARGET tests POST_BUILD COMMAND "${CMAKE_SOURCE_DIR}/tools/coverage-clean.sh")
 endif()
 
 configure_file(cmake/googletest.CMakeLists.txt googletest-download/CMakeLists.txt)
@@ -45,4 +47,3 @@ add_subdirectory(
 	"${CMAKE_BINARY_DIR}/googletest-build"
 	EXCLUDE_FROM_ALL
 )
-

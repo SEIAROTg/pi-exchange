@@ -12,7 +12,7 @@
 #include <memory>
 #include <atomic>
 #include <condition_variable>
-#include "config.h"
+#include "config/config.h"
 
 namespace piex {
 namespace socket {

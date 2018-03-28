@@ -11,7 +11,7 @@
 #include <thread>
 #include <memory>
 #include <condition_variable>
-#include "config.h"
+#include "config/config.h"
 
 namespace piex {
 namespace socket {

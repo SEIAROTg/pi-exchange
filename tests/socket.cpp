@@ -4,7 +4,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 #include "src/socket/socket.h"
-#include "config.h"
+#include "config/config.h"
 
 class Socket : public ::testing::Test {
 protected:
