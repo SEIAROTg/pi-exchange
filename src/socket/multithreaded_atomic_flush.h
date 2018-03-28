@@ -277,6 +277,7 @@ public:
 		return reader_->data_.nonempty();
 	}
 	void close() {
+		::shutdown(fd_, SHUT_RDWR);
 		::close(fd_);
 		fd_ = -1;
 		reader_.reset();

@@ -204,6 +204,7 @@ public:
 		return reader_->size_ > 0;
 	}
 	void close() {
+		::shutdown(fd_, SHUT_RDWR);
 		::close(fd_);
 		fd_ = -1;
 		reader_.reset();
