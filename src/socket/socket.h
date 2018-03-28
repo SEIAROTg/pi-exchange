@@ -11,8 +11,10 @@
 	#include "src/socket/multithreaded_atomic.h"
 #elif PIEX_OPTION_SOCKET == PIEX_OPTION_SOCKET_MULTITHREADED_ATOMIC_FLUSH
 	#include "src/socket/multithreaded_atomic_flush.h"
-#else
+#elif PIEX_OPTION_SOCKET == PIEX_OPTION_TRIVIAL
 	#include "src/socket/trivial.h"
+#else
+	#error "Invalid PIEX_OPTION_SOCKET"
 #endif
 
 #endif

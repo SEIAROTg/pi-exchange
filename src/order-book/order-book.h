@@ -7,8 +7,10 @@
 	#include "src/order-book/rbtree.h"
 #elif PIEX_OPTION_ORDER_BOOK == PIEX_OPTION_ORDER_BOOK_HEAP
 	#include "src/order-book/heap.h"
-#else
+#elif PIEX_OPTION_ORDER_BOOK == PIEX_OPTION_TRIVIAL
 	#include "src/order-book/vector.h"
+#else
+	#error "Invalid PIEX_OPTION_ORDER_BOOK"
 #endif
 
 #endif

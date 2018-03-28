@@ -1,7 +1,8 @@
 #ifndef PIEX_HEADER_CONFIG
 #define PIEX_HEADER_CONFIG
 
-#define PIEX_OPTION_TRIVIAL 0
+// to avoid false positive comparsion when an option is misspelled
+#define PIEX_OPTION_TRIVIAL -1
 
 // socket
 
