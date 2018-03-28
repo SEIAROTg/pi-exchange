@@ -41,6 +41,7 @@ public:
 		auto pos = it->second;
 		if (push_heap(pos, *orders_.rbegin())) {
 			orders_.pop_back();
+			order_pos_.erase(it);
 		} else {
 			pop_heap(pos);
 		}
@@ -54,7 +55,11 @@ private:
 		auto p = (i - 1) / 2;
 		if (i && order < orders_[p]) {
 			order_pos_.at(orders_[p].id()) = i;
-			orders_.push_back(orders_[p]);
+			if (i == orders_.size()) {
+				orders_.push_back(orders_[p]);
+			} else {
+				orders_[i] = orders_[p];
+			}
 			i = p;
 			p = (i - 1) / 2;
 		} else {
@@ -92,7 +97,7 @@ private:
 			r = i * 2 + 2;
 		}
 		orders_.pop_back();
-		if (orders_.size()) {
+		if (i != orders_.size()) {
 			orders_[i] = order;
 			order_pos_.at(order.id()) = i;
 		}
