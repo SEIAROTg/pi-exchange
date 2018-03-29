@@ -121,7 +121,7 @@ private:
 		constexpr static Order::PriceType MIN_PRICE = 100;
 		Order::PriceType diff = random_half_poisson(INITIAL_PRICE);
 		Order::PriceType price = std::get<Orders<O>>(orders_).top_price();
-		return std::is_same<Order, BuyOrder>() ? std::max(price - diff, MIN_PRICE) : price + diff;
+		return std::is_same<O, BuyOrder>() ? std::max(price - diff, MIN_PRICE) : price + diff;
 	}
 
 	// generate a order price that will be matched immediately
