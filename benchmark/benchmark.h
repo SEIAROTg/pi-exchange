@@ -3,12 +3,12 @@
 
 #include <cstdint>
 #include <chrono>
-#include <unordered_map>
 #include "src/order/order.h"
 #include "src/packets/packets.h"
 #include "benchmark/source/source.h"
 #include "benchmark/destination/destination.h"
 #include "benchmark/stats.h"
+#include "benchmark/static_map.h"
 
 namespace piex {
 namespace benchmark {
@@ -39,25 +39,21 @@ public:
 	}
 	void process(const Request::Place &request) {
 		++requests_submitted_;
-		place_time_.insert({ request.order().id(), std::chrono::high_resolution_clock::now() });
+		place_time_.insert(request.order().id(), std::chrono::high_resolution_clock::now());
 		destination_->process(request);
 	}
 	void process(const Request::Cancel &request) {
 		++requests_submitted_;
-		cancel_time_.insert({ request.id(), std::chrono::high_resolution_clock::now() });
+		cancel_time_.insert(request.id(), std::chrono::high_resolution_clock::now());
 		destination_->process(request);
 	}
 	void process(const Response::Place &response) {
 		++requests_processed_;
-		auto it = place_time_.find(response.id());
-		stats_.add_entry(elapsed_time(it->second));
-		place_time_.erase(it);
+		stats_.add_entry(elapsed_time(place_time_.erase(response.id())));
 	}
 	void process(const Response::Cancel &response) {
 		++requests_processed_;
-		auto it = cancel_time_.find(response.id());
-		stats_.add_entry(elapsed_time(it->second));
-		cancel_time_.erase(it);
+		stats_.add_entry(elapsed_time(cancel_time_.erase(response.id())));
 	}
 	void process(const Response::Match &) {}
 	const Stats &stats() {
@@ -67,7 +63,18 @@ private:
 	destination::Destination<Benchmark> *destination_;
 	std::uint64_t requests_submitted_, requests_processed_;
 	Stats stats_;
-	std::unordered_map<Order::IdType, std::chrono::high_resolution_clock::time_point> place_time_, cancel_time_;
+	static_map<
+		Order::IdType,
+		std::chrono::high_resolution_clock::time_point,
+		PIEX_OPTION_BENCHMARK_REQUEST_WINDOW_SIZE,
+		true
+	> place_time_;
+	static_map<
+		Order::IdType,
+		std::chrono::high_resolution_clock::time_point,
+		PIEX_OPTION_BENCHMARK_REQUEST_WINDOW_SIZE,
+		false
+	> cancel_time_;
 
 	// elapsed time in 10^(-4) s
 	static std::uint64_t elapsed_time(std::chrono::high_resolution_clock::time_point tp) {
