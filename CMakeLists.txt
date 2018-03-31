@@ -13,7 +13,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR})
+find_package(Boost)
+
+include_directories(${CMAKE_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
 add_executable(exchange src/main.cpp)
 
