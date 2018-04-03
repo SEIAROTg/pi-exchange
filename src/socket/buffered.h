@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <cerrno>
 #include <cstring>
@@ -116,6 +117,7 @@ private:
 				int fd = socket(cursor->ai_family, cursor->ai_socktype, cursor->ai_protocol);
 				int on = 1;
 				setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+				setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on));
 				if (fd < 0) {
 					freeaddrinfo(results);
 					throw std::runtime_error(std::strerror(errno));
