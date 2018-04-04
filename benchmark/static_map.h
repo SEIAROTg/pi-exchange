@@ -42,7 +42,7 @@ public:
 			this->keys_[pos] = EMPTY;
 			return this->values_[pos];
 		}
-		if (key < cursor_ - N) {
+		if (key + N < cursor_) {
 			auto it = this->archived_.find(key);
 			V value = it->second;
 			this->archived_.erase(it);
