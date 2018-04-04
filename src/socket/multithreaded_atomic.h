@@ -17,10 +17,10 @@
 namespace piex {
 namespace socket {
 
-class Interval {
+class Buffer {
 public:
-	Interval(std::mutex *mutex, std::size_t cursor, std::size_t size) : mutex_(mutex), cursor_(cursor), size_(size) {}
-	Interval(std::mutex *mutex) : Interval(mutex, 0, 0) {}
+	Buffer(std::mutex *mutex, std::size_t cursor, std::size_t size) : mutex_(mutex), cursor_(cursor), size_(size) {}
+	Buffer(std::mutex *mutex) : Buffer(mutex, 0, 0) {}
 	std::pair<std::size_t, std::size_t> lock_interval(std::size_t n) {
 		if (size_.load() == 0) {
 			std::unique_lock<std::mutex> lock(*mutex_);
@@ -40,7 +40,7 @@ public:
 		return {cursor, len};
 	}
 	void release(std::size_t n) {
-		cursor_ -= n;
+		cursor_ += PIEX_OPTION_SOCKET_BUFFER_SIZE - n; // avoid underflow
 		cursor_ %= PIEX_OPTION_SOCKET_BUFFER_SIZE;
 		size_ += n;
 	}
@@ -89,7 +89,7 @@ public:
 	int fd_ = -1;
 	char buffer_[PIEX_OPTION_SOCKET_BUFFER_SIZE];
 	std::mutex mutex_;
-	Interval data_, space_;
+	Buffer data_, space_;
 	std::thread thread_;
 protected:
 	template <class Function, class... Args>
