@@ -16,6 +16,17 @@ endif()
 find_package(Boost)
 
 include_directories(${CMAKE_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
+find_library(LIBATOMIC
+	NAMES atomic atomic.so.1 libatomic.so.1
+	HINTS
+	/usr/lib64
+	/usr/lib
+	/lib64
+	/lib
+)
+if (LIBATOMIC)
+	link_libraries(atomic)
+endif()
 
 add_executable(exchange src/main.cpp)
 
