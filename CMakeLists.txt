@@ -31,6 +31,7 @@ endif()
 add_executable(exchange src/main.cpp)
 
 add_executable(benchmark EXCLUDE_FROM_ALL benchmark/main.cpp)
+target_link_libraries(benchmark m)
 
 add_executable(tests EXCLUDE_FROM_ALL tests/order.cpp tests/order-book.cpp tests/exchange.cpp tests/packets.cpp tests/socket.cpp tests/server.cpp)
 target_link_libraries(tests gtest_main gmock)

@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cmath>
 #include <ostream>
 #include <vector>
 #include <algorithm>
@@ -19,6 +20,7 @@ public:
 			latency = LATENCY_VALUES;
 		}
 		total_latency += latency;
+		total_latency2 += latency * latency;
 		++latencies[latency];
 		++order_num;
 	}
@@ -30,6 +32,9 @@ public:
 	}
 	double latency_average() const {
 		return static_cast<double>(total_latency) / order_num;
+	}
+	double latency_stddev() const {
+		return std::sqrt((total_latency2 - static_cast<double>(total_latency * total_latency) / order_num) / order_num);
 	}
 	std::vector<std::pair<double, std::uint64_t>> latency_distribution() const {
 		std::vector<std::pair<double, std::uint64_t>> ret;
@@ -54,6 +59,7 @@ private:
 	constexpr static double PERCENTILES[] = {0.1, 1, 5, 25, 50, 75, 95, 99, 99.9, 99.99};
 	std::uint64_t order_num = 0;
 	std::uint64_t total_latency = 0;
+	std::uint64_t total_latency2 = 0;
 	std::uint64_t max_latency = 0;
 	std::vector<std::uint64_t> latencies;
 	std::chrono::high_resolution_clock::time_point start_time;
@@ -69,6 +75,7 @@ std::ostream &operator<<(std::ostream &os, const Stats &stats) {
 		<< std::endl
 		<< "Latency:" << std::endl
 		<< "    Average: " << std::fixed << stats.latency_average() / 10.0 << " ms" << std::endl
+		<< "    Standard Deviation: " << stats.latency_stddev() / 10.0 << " ms" << std::endl
 		<< "    Distribution:" << std::endl;
 	os << std::setprecision(precision);
 	auto distribution = stats.latency_distribution();
