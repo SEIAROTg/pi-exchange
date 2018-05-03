@@ -4,8 +4,8 @@ namespace piex {
 class Order {
 public:
 	using IdType = std::uint64_t;
-	using PriceType = std::uint64_t;
-	using QuantityType = std::uint64_t;
+	using PriceType = std::uint32_t;
+	using QuantityType = std::uint32_t;
 
 	Order(const IdType &id, const PriceType &price, const QuantityType &quantity) :
 		id_(id),

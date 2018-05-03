@@ -17,4 +17,8 @@
 #define PIEX_OPTION_ORDER_BOOK_HEAP 2
 #define PIEX_OPTION_ORDER_BOOK_TREAP 3
 
+// packets
+
+#define PIEX_OPTION_PACKETS_COMPACT 1
+
 #endif

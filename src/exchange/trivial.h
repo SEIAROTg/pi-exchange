@@ -11,9 +11,11 @@ public:
 
 	void process_request(const Request::Place &request) {
 		if (request.order_type() == Request::BUY) {
-			insert_order_to_book(static_cast<const BuyOrder &>(request.order()), buy_book_, sell_book_);
+			const Order &order = request.order();
+			insert_order_to_book(static_cast<const BuyOrder &>(order), buy_book_, sell_book_);
 		} else {
-			insert_order_to_book(static_cast<const SellOrder &>(request.order()), sell_book_, buy_book_);
+			const Order &order = request.order();
+			insert_order_to_book(static_cast<const SellOrder &>(order), sell_book_, buy_book_);
 		}
 	}
 
