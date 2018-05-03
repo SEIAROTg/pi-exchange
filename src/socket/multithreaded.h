@@ -11,6 +11,7 @@
 #include <thread>
 #include <memory>
 #include <condition_variable>
+#include "src/utility/socket.h"
 #include "config/config.h"
 
 namespace piex {
@@ -156,11 +157,11 @@ public:
 		}
 	}
 	void connect(const char *host, const char *port) {
-		fd_ = get_ready_socket(host, port, false);
+		fd_ = utility::socket::create_socket(host, port, false);
 		start_daemon();
 	}
 	void listen(const char *host, const char *port) {
-		fd_ = get_ready_socket(host, port, true);
+		fd_ = utility::socket::create_socket(host, port, true);
 		int ret = ::listen(fd_, 0);
 		if (ret < 0) {
 			throw std::runtime_error(std::strerror(errno));
@@ -220,43 +221,6 @@ private:
 	int fd_ = -1;
 	std::unique_ptr<ReaderDaemon> reader_;
 	std::unique_ptr<WriterDaemon> writer_;
-	static int get_ready_socket(const char *host, const char *port, bool is_server) {
-		int ret;
-		addrinfo hints = {
-			.ai_flags = is_server ? AI_PASSIVE : 0,
-			.ai_family = AF_UNSPEC,
-			.ai_socktype = SOCK_STREAM,
-			.ai_protocol = 0,
-			.ai_addrlen = 0,
-			.ai_addr = nullptr,
-			.ai_canonname = nullptr,
-			.ai_next = nullptr,
-		};
-		addrinfo *results;
-		ret = getaddrinfo(host, port, &hints, &results);
-		if (ret) {
-			throw std::runtime_error(gai_strerror(ret));
-		}
-		for (addrinfo *cursor = results; cursor; cursor = cursor->ai_next) {
-			if (cursor->ai_family == AF_INET || cursor->ai_family == AF_INET6) {
-				int fd = ::socket(cursor->ai_family, cursor->ai_socktype, cursor->ai_protocol);
-				int on = 1;
-				setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-				if (fd < 0) {
-					freeaddrinfo(results);
-					throw std::runtime_error(std::strerror(errno));
-				}
-				ret = (is_server ? bind : ::connect)(fd, cursor->ai_addr, cursor->ai_addrlen);
-				if (ret < 0) {
-					freeaddrinfo(results);
-					throw std::runtime_error(std::strerror(errno));
-				}
-				freeaddrinfo(results);
-				return fd;
-			}
-		}
-		throw std::runtime_error("getaddrinfo returns no data");
-	}
 	void start_daemon() {
 		reader_ = std::make_unique<ReaderDaemon>(fd_);
 		writer_ = std::make_unique<WriterDaemon>(fd_);
