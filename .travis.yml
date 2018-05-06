@@ -11,7 +11,7 @@ matrix:
           packages:
             - cmake
             - realpath
-            - libboost-all-dev
+            - libboost-dev
             - linux-headers-generic
 
 before_install:
