@@ -12,6 +12,7 @@ matrix:
             - cmake
             - realpath
             - libboost-all-dev
+            - linux-headers-generic
 
 before_install:
   - wget http://downloads.sourceforge.net/ltp/lcov-1.13.tar.gz -O lcov.tar.gz
@@ -23,8 +24,6 @@ before_install:
   - tar xf llvm.tar.xz -C "$HOME/llvm" --strip-components=1
   - export PATH=$HOME/llvm/bin:$PATH
   - pip install --user cpp-coveralls
-
-install: true
 
 script:
   - cd $TRAVIS_BUILD_DIR

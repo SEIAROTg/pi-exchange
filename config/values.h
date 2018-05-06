@@ -21,4 +21,8 @@
 
 #define PIEX_OPTION_PACKETS_COMPACT 1
 
+// nsemaphore
+
+#define PIEX_OPTION_NSEMAPHORE_FUTEX 1
+
 #endif
