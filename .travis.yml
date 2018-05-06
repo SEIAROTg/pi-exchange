@@ -15,7 +15,7 @@ matrix:
             - linux-headers-generic
 
 before_install:
-  - wget http://downloads.sourceforge.net/ltp/lcov-1.13.tar.gz -O lcov.tar.gz
+  - wget https://github.com/linux-test-project/lcov/releases/download/v1.13/lcov-1.13.tar.gz -O lcov.tar.gz
   - mkdir "$HOME/lcov"
   - tar xfz lcov.tar.gz -C "$HOME/lcov" --strip-components=1
   - export PATH=$HOME/lcov/bin:$PATH
