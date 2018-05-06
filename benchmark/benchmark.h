@@ -26,6 +26,9 @@ public:
 		stats_.start();
 
 		while (requests_submitted_  < requests_total) {
+			if (requests_submitted_ - requests_processed_ > PIEX_OPTION_BENCHMARK_REQUEST_WINDOW_SIZE) {
+				destination_->flush();
+			}
 			while (requests_submitted_ - requests_processed_ > PIEX_OPTION_BENCHMARK_REQUEST_WINDOW_SIZE) {
 				destination_->wait_response();
 			}
