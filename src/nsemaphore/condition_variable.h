@@ -74,13 +74,16 @@ public:
 		cv_.notify_one();
 	}
 	void wait(std::size_t n) {
-		std::unique_lock<std::mutex> lock(mutex_);
-		waiting_size_ = n;
-		cv_.wait(lock, [this, n]() {
-			LooseSize size = size_.load();
-			return size.size >= n || size.flush_size > 0 || terminated_;
-		});
-		waiting_size_ = 0;
+		LooseSize size = size_.load();
+		if (size.size < n && size.flush_size == 0 && !terminated_) {
+			std::unique_lock<std::mutex> lock(mutex_);
+			waiting_size_ = n;
+			cv_.wait(lock, [this, n]() {
+				LooseSize size = size_.load();
+				return size.size >= n || size.flush_size > 0 || terminated_;
+			});
+			waiting_size_ = 0;
+		}
 	}
 	void consume(std::size_t n) {
 		LooseSize size = size_.load();
