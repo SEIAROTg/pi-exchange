@@ -4,6 +4,7 @@
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <cerrno>
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 #include <algorithm>
@@ -124,6 +125,7 @@ public:
 	}
 	ssize_t read(void *buf, std::size_t nbytes_total, std::size_t nbytes_read = 0) {
 		std::size_t nbytes_to_read = nbytes_total - nbytes_read;
+		assert(nbytes_to_read <= PIEX_OPTION_SOCKET_BUFFER_SIZE - PIEX_OPTION_SOCKET_FLUSH_THRESHOLD);
 		reader_->data_.size_.wait(nbytes_to_read);
 		std::size_t offset = reader_->data_.cursor_;
 		std::size_t len = nbytes_to_read;
@@ -137,6 +139,7 @@ public:
 		return nbytes_total;
 	}
 	ssize_t write(const void *buf, std::size_t nbytes_total) {
+		assert(nbytes_total <= PIEX_OPTION_SOCKET_BUFFER_SIZE - PIEX_OPTION_SOCKET_FLUSH_THRESHOLD);
 		writer_->space_.size_.wait(nbytes_total);
 		std::size_t offset = writer_->space_.cursor_;
 		std::size_t len = nbytes_total;
