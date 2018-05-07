@@ -1,5 +1,6 @@
 #include <cstring>
 #include "gtest/gtest.h"
+#include "tests/config_override.h"
 #include "src/packets/packets.h"
 
 template <class T>

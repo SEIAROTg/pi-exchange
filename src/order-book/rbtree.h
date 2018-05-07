@@ -1,6 +1,5 @@
-#include <unordered_map>
-#include <set>
 #include "src/order/order.h"
+#include "src/utility/pool.h"
 
 namespace piex {
 // not thread safe
@@ -10,6 +9,9 @@ public:
 	using OrderType = T;
 	using SizeType = typename std::set<OrderType>::size_type;
 
+	OrderBook() :
+		pooled_orders_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
+		pooled_order_prices_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE) {}
 	bool empty() const {
 		return orders_.empty();
 	}
@@ -45,7 +47,10 @@ public:
 	}
 
 private:
-	std::unordered_map<Order::IdType, Order::PriceType> order_prices_;
-	std::set<OrderType> orders_;
+	utility::pool::set<OrderType> pooled_orders_;
+	decltype(pooled_orders_.container()) &orders_ = pooled_orders_.container();
+	utility::pool::unordered_map<Order::IdType, Order::PriceType> pooled_order_prices_;
+	decltype(pooled_order_prices_.container()) &order_prices_ = pooled_order_prices_.container();
 };
+
 }

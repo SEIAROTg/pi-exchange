@@ -1,6 +1,6 @@
-#include <vector>
-#include <unordered_map>
+#include <deque>
 #include "src/order/order.h"
+#include "src/utility/pool.h"
 
 namespace piex {
 // not thread safe
@@ -8,8 +8,11 @@ template <class T>
 class OrderBook {
 public:
 	using OrderType = T;
-	using SizeType = typename std::vector<OrderType>::size_type;
+	using SizeType = typename std::deque<OrderType>::size_type;
 
+	OrderBook() :
+		pooled_order_pos_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
+		order_pos_(pooled_order_pos_.container()) {}
 	bool empty() const {
 		return orders_.empty();
 	}
@@ -48,8 +51,9 @@ public:
 		return true;
 	}
 private:
-	std::vector<OrderType> orders_;
-	std::unordered_map<Order::IdType, typename decltype(orders_)::size_type> order_pos_;
+	std::deque<OrderType> orders_;
+	utility::pool::unordered_map<Order::IdType, typename decltype(orders_)::size_type> pooled_order_pos_;
+	decltype(pooled_order_pos_.container()) &order_pos_;
 	bool push_heap(typename decltype(orders_)::size_type size, const OrderType &order) {
 		auto i = size;
 		auto p = (i - 1) / 2;

@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "tests/config_override.h"
 #include "src/order-book/order-book.h"
 #include "src/order/order.h"
 

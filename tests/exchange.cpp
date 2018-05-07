@@ -2,6 +2,7 @@
 #include <variant>
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "tests/config_override.h"
 #include "src/exchange/exchange.h"
 #include "src/packets/packets.h"
 

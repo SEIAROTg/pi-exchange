@@ -7,6 +7,7 @@
 #include <thread>
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "tests/config_override.h"
 #include "src/server/server.h"
 #include "src/client/client.h"
 #include "src/packets/packets.h"

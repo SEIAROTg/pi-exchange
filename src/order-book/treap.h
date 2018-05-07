@@ -1,6 +1,7 @@
 #include <deque>
 #include <boost/intrusive/treap_set.hpp>
 #include "src/order/order.h"
+#include "src/utility/pool.h"
 
 namespace piex {
 namespace order_book {
@@ -35,38 +36,18 @@ private:
 	T order_;
 };
 
-template <class T>
-class Pool {
-public:
-	~Pool() {
-		for (Hook<T> *node : deque_) {
-			delete node;
-		}
-	}
-	Hook<T> *allocate(const T &order) {
-		if (deque_.size()) {
-			Hook<T> *node = deque_.back();
-			deque_.pop_back();
-			node->order() = order;
-			return node;
-		}
-		return new Hook<T>(order);
-	}
-	void release(Hook<T> &node) {
-		deque_.push_back(&node);
-	}
-private:
-	std::deque<Hook<T> *> deque_;
-};
-
 // not thread safe
 template <class OrderType>
 class OrderBook {
 private:
-	Pool<OrderType> pool_;
+	utility::pool::RawAllocator allocator_;
+	utility::pool::StdAllocator<Hook<OrderType>> std_allocator_;
 	boost::intrusive::treap_set<Hook<OrderType>> orders_;
 public:
 	using SizeType = typename decltype(orders_)::size_type;
+	OrderBook() :
+		allocator_(alignof(Hook<OrderType>) + sizeof(Hook<OrderType>) - 1, PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
+		std_allocator_(allocator_) {}
 	bool empty() const {
 		return orders_.empty();
 	}
@@ -79,7 +60,9 @@ public:
 	}
 	// O(log n)
 	bool insert(const OrderType &order) {
-		orders_.insert(*pool_.allocate(order));
+		Hook<OrderType> *ptr = std_allocator_.allocate(1);
+		new(ptr) Hook<OrderType>(order);
+		orders_.insert(*ptr);
 		return true;
 	}
 	// O(log n)
@@ -87,7 +70,7 @@ public:
 		auto it = orders_.top();
 		auto &data = *it;
 		orders_.erase(it);
-		pool_.release(data);
+		std_allocator_.deallocate(&data, 1);
 	}
 	// O(log n)
 	bool remove(const typename OrderType::IdType &id) {
@@ -97,7 +80,7 @@ public:
 		}
 		auto &data = *it;
 		orders_.erase(it);
-		pool_.release(data);
+		std_allocator_.deallocate(&data, 1);
 		return true;
 	}
 };

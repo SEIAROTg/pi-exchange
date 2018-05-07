@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 #include "gtest/gtest.h"
+#include "tests/config_override.h"
 #include "src/socket/socket.h"
-#include "config/config.h"
 
 class Socket : public ::testing::Test {
 protected:
@@ -58,7 +58,7 @@ TEST_F(Socket, batch) {
 	for (size_t total = 0; total <= to_transmit; ++i, total += i) {
 		std::vector<unsigned char> data;
 		for (int j = 0; j <= i; ++j) {
-			data.push_back(rand() % 0x100);
+			data.push_back(std::rand() % 0x100);
 		}
 		client.write(&data[0], i + 1);
 	}
