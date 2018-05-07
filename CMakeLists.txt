@@ -46,12 +46,13 @@ if (LIBATOMIC)
 endif()
 
 add_executable(exchange src/main.cpp)
+target_link_libraries(exchange foonathan_memory)
 
 add_executable(benchmark EXCLUDE_FROM_ALL benchmark/main.cpp)
 target_link_libraries(benchmark m)
 
 add_executable(tests EXCLUDE_FROM_ALL tests/order.cpp tests/order-book.cpp tests/exchange.cpp tests/packets.cpp tests/socket.cpp tests/server.cpp)
-target_link_libraries(tests gtest_main gmock)
+target_link_libraries(tests gtest_main gmock foonathan_memory)
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
 	target_compile_options(tests PRIVATE --coverage)
@@ -76,5 +77,25 @@ endif()
 add_subdirectory(
 	"${CMAKE_BINARY_DIR}/googletest-src"
 	"${CMAKE_BINARY_DIR}/googletest-build"
+	EXCLUDE_FROM_ALL
+)
+
+configure_file(cmake/memory.CMakeLists.txt memory-download/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+	RESULT_VARIABLE result
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/memory-download)
+if(result)
+	message(FATAL_ERROR "CMake step for memory failed: ${result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+	RESULT_VARIABLE result
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/memory-download)
+if(result)
+	message(FATAL_ERROR "Build step for memory failed: ${result}")
+endif()
+
+add_subdirectory(
+	"${CMAKE_BINARY_DIR}/memory-src"
+	"${CMAKE_BINARY_DIR}/memory-build"
 	EXCLUDE_FROM_ALL
 )
