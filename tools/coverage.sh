@@ -27,7 +27,12 @@ do
 	echo
 	echo "Build with config: $config"
 	echo
-	cp "$header" $REPO/config/config.h
+
+	echo '#ifndef PIEX_HEADER_CONFIG_CONFIG' > "$REPO/config/config.h"
+	echo '#define PIEX_HEADER_CONFIG_CONFIG' >> "$REPO/config/config.h"
+	echo "#include \"config/templates/$filename\"" >> "$REPO/config/config.h"
+	echo '#endif' >> "$REPO/config/config.h"
+
 	make tests
 	./tests
 	info="$config.info"
