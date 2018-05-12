@@ -11,7 +11,9 @@ public:
 	using SizeType = typename std::deque<OrderType>::size_type;
 
 	OrderBook() :
-		pooled_order_pos_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
+		pooled_orders_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE / 2),
+		orders_(pooled_orders_.container()),
+		pooled_order_pos_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE / 2),
 		order_pos_(pooled_order_pos_.container()) {}
 	bool empty() const {
 		return orders_.empty();
@@ -51,10 +53,11 @@ public:
 		return true;
 	}
 private:
-	std::deque<OrderType> orders_;
-	utility::pool::unordered_map<Order::IdType, typename decltype(orders_)::size_type> pooled_order_pos_;
+	utility::pool::deque<OrderType> pooled_orders_;
+	decltype(pooled_orders_.container()) &orders_;
+	utility::pool::unordered_map<Order::IdType, SizeType> pooled_order_pos_;
 	decltype(pooled_order_pos_.container()) &order_pos_;
-	bool push_heap(typename decltype(orders_)::size_type size, const OrderType &order) {
+	bool push_heap(SizeType size, const OrderType &order) {
 		auto i = size;
 		auto p = (i - 1) / 2;
 		if (i && order < orders_[p]) {
@@ -79,7 +82,7 @@ private:
 		orders_[i] = order;
 		return true;
 	}
-	void pop_heap(typename decltype(orders_)::size_type root) {
+	void pop_heap(SizeType root) {
 		order_pos_.erase(orders_[root].id());
 		OrderType &order = *orders_.rbegin();
 		auto i = root;

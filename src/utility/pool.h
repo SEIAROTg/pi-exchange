@@ -58,6 +58,20 @@ public:
 	}
 };
 
+template <class T>
+class deque {
+private:
+	RawAllocator allocator_;
+	memory::deque<T, RawAllocator> container_;
+public:
+	explicit deque(std::size_t size) :
+		allocator_(sizeof(T), size),
+		container_(allocator_) {}
+	decltype(container_) &container() {
+		return container_;
+	}
+};
+
 }
 }
 }
