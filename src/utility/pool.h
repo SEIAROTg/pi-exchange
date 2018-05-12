@@ -44,6 +44,20 @@ public:
 	}
 };
 
+template <class K, class V>
+class map {
+private:
+	RawAllocator allocator_;
+	memory::map<K, V, RawAllocator> container_;
+public:
+	explicit map(std::size_t size) :
+		allocator_(memory::map_node_size<std::pair<const K, V>>::value, size),
+		container_(allocator_) {}
+	decltype(container_) &container() {
+		return container_;
+	}
+};
+
 }
 }
 }

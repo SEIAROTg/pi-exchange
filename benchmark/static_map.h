@@ -1,5 +1,5 @@
-#include <map>
 #include <algorithm>
+#include "src/utility/pool.h"
 
 namespace piex {
 namespace benchmark {
@@ -7,10 +7,14 @@ namespace benchmark {
 template <class K, class V, std::size_t N>
 class static_map_base {
 protected:
+	static_map_base() :
+		pooled_archived_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
+		archived_(pooled_archived_.container()) {}
 	K keys_[N];
 	char values_buf_[N * sizeof(V)];
 	V (&values_)[N] = *reinterpret_cast<V(*)[N]>(values_buf_);
-	std::map<K, V> archived_;
+	utility::pool::map<K, V> pooled_archived_;
+	decltype(pooled_archived_.container()) archived_;
 
 	std::size_t hash(const K &key) {
 		return key % N;
