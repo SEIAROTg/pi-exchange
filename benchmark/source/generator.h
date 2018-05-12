@@ -5,7 +5,6 @@
 #include <utility>
 #include <random>
 #include <set>
-#include <unordered_map>
 #include <algorithm>
 #include "src/packets/packets.h"
 #include "src/order/order.h"
@@ -46,6 +45,7 @@ public:
 
 	// generate random requests
 	void yield() {
+		update_trend();
 		bool buysell = random_buysell();
 		if (random_action_match()) {
 			// place match
@@ -65,9 +65,25 @@ private:
 	std::mt19937_64 gen_;
 	std::pair<Orders<BuyOrder>, Orders<SellOrder>> orders_;
 	Order::IdType id_ = 0;
+	// true for rising, false for falling
+	bool trend_ = true;
 
 	Order::IdType next_id() {
 		return id_++;
+	}
+
+	static Order::PriceType safe_price_minus(Order::PriceType a, Order::PriceType b) {
+		constexpr static Order::PriceType MIN_PRICE = 100;
+		return std::max(a, b + MIN_PRICE) - b;
+	}
+
+	void update_trend() {
+		// 1/1000 probability to re-generate trend
+		static std::uniform_int_distribution<> dis(0, 1000 * 2 - 1);
+		int r = dis(gen_);
+		if (r <= 1) {
+			trend_ = r == 0;
+		}
 	}
 
 	// generate a random integer
@@ -118,19 +134,28 @@ private:
 	// T can be BuyOrder or SellOrder
 	template <class O>
 	Order::PriceType random_price() {
-		constexpr static Order::PriceType MIN_PRICE = 100;
 		Order::PriceType diff = random_half_poisson(INITIAL_PRICE);
 		Order::PriceType price = std::get<Orders<O>>(orders_).top_price();
-		return std::is_same<O, BuyOrder>() ? std::max(price - diff, MIN_PRICE) : price + diff;
+		if (std::is_same<O, BuyOrder>()) {
+			return safe_price_minus(price, trend_ ? diff : diff * 2);
+		} else {
+			return price + (trend_ ? diff * 2 : diff);
+		}
 	}
 
 	// generate a order price that will be matched immediately
 	// T can be BuyOrder or SellOrder
 	template <class O>
 	Order::PriceType match_price() {
-		return std::is_same<O, BuyOrder>()
+		Order::PriceType diff = random_half_poisson(INITIAL_PRICE);
+		Order::PriceType price = std::is_same<O, BuyOrder>()
 			? std::get<Orders<SellOrder>>(orders_).top_price()
 			: std::get<Orders<BuyOrder>>(orders_).top_price();
+		if (std::is_same<O, BuyOrder>()) {
+			return price + (trend_ ? diff * 2 : diff);
+		} else {
+			return safe_price_minus(price, trend_ ? diff : diff * 2);
+		}
 	}
 
 	// generate random order price as an indication to cancel orders_
