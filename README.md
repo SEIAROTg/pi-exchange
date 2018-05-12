@@ -5,6 +5,13 @@
 
 Playground of optimization experiments, targeting a simple exchange server on Raspberry Pi 3B.
 
+### Prerequisite
+
+* Raspberry Pi 3B
+* Clang
+* CMake
+* Git
+* Boost
 
 ### Build
 
