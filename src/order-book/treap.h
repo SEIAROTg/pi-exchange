@@ -46,7 +46,7 @@ private:
 public:
 	using SizeType = typename decltype(orders_)::size_type;
 	OrderBook() :
-		allocator_(alignof(Hook<OrderType>) + sizeof(Hook<OrderType>) - 1, PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
+		allocator_(alignof(Hook<OrderType>) + sizeof(Hook<OrderType>), PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
 		std_allocator_(allocator_) {}
 	bool empty() const {
 		return orders_.empty();
