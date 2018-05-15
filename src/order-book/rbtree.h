@@ -10,8 +10,8 @@ public:
 	using SizeType = typename std::set<OrderType>::size_type;
 
 	OrderBook() :
-		pooled_orders_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE),
-		pooled_order_prices_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE) {}
+		pooled_orders_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE / 2),
+		pooled_order_prices_(PIEX_OPTION_ORDER_BOOK_INIT_SIZE/ 2) {}
 	bool empty() const {
 		return orders_.empty();
 	}
