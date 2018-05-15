@@ -2,7 +2,8 @@
 #include "src/utility/pool.h"
 
 namespace piex {
-// not thread safe
+
+/// \remark Not thread safe
 template <class T>
 class OrderBook {
 public:
@@ -18,23 +19,29 @@ public:
 	SizeType size() const {
 		return orders_.size();
 	}
+
+	/// \remarks The behavior is undefined if the order book is empty
+	/// \complexity O(1)
 	const OrderType &top() const {
-		// no boundary check for performance
 		return *orders_.begin();
 	}
-	// O(log n)
+
+	/// \complexity O(log n)
 	bool insert(const OrderType &order) {
 		order_prices_.insert({order.id(), order.price()});
 		orders_.insert(order);
 		return true;
 	}
-	// O(log n)
+
+	/// \complexity O(log n)
+	/// \remarks The behavior is undefined if the order book is empty
 	void pop() {
 		Order order = top();
 		orders_.erase(orders_.begin());
 		order_prices_.erase(order.id());
 	}
-	// O(log n)
+	
+	/// \complexity O(log n)
 	bool remove(const typename OrderType::IdType &id) {
 		auto it = order_prices_.find(id);
 		if (it == order_prices_.end()) {

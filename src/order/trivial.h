@@ -40,18 +40,26 @@ class SellOrder;
 class BuyOrder : public Order {
 public:
 	using Order::Order;
+	/// \effects Compare the priority with another order
+	/// \returns bool indicating this order has higher priority
 	bool operator<(const BuyOrder &other) const {
 		return (price() > other.price()) || (price() == other.price() && id() < other.id());
 	}
+	/// \effects Check if two this order is compatiable with another
+	/// \returns bool indicating whether the orders are compatiable
 	inline bool is_compatible_with(const SellOrder &) const;
 };
 
 class SellOrder : public Order {
 public:
 	using Order::Order;
+	/// \effects Compare the priority with another order
+	/// \returns bool indicating this order has higher priority
 	bool operator<(const SellOrder &other) const {
 		return (price() < other.price()) || (price() == other.price() && id() < other.id());
 	}
+	/// \effects Check if two this order is compatiable with another
+	/// \returns bool indicating whether the orders are compatiable
 	inline bool is_compatible_with(const BuyOrder &) const;
 };
 

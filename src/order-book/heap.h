@@ -21,11 +21,18 @@ public:
 	SizeType size() const {
 		return orders_.size();
 	}
+
+	/// \returns The order with highest priority
+	/// \remarks The behavior is undefined if the order book is empty
+	/// \complexity O(1)
 	const OrderType &top() const {
-		// no boundary check for performance
 		return *orders_.begin();
 	}
-	// O(log n)
+	
+	/// \effects Insert an order into the book
+	/// \param order The order to insert
+	/// \complexity O(log n)
+	/// \returns bool indicating whether the insertion is successful
 	bool insert(const OrderType &order) {
 		if (!push_heap(orders_.size(), order)) {
 			order_pos_[order.id()] = orders_.size();
@@ -33,11 +40,18 @@ public:
 		}
 		return true;
 	}
-	// O(log n)
+
+	/// \effects Pop the order with highest priority from the book
+	/// \remarks The behavior is undefined if the order book is empty
+	/// \complexity O(log n)
 	void pop() {
 		pop_heap(0);
 	}
-	// O(log n)
+
+	/// \effects Remove an order by id from the book
+	/// \param id The id of the order to remove
+	/// \complexity O(log n)
+	/// \returns bool indicating whether the order is found and removed
 	bool remove(const typename OrderType::IdType &id) {
 		auto it = order_pos_.find(id);
 		if (it == order_pos_.end()) {
@@ -57,6 +71,13 @@ private:
 	decltype(pooled_orders_.container()) &orders_;
 	utility::pool::unordered_map<Order::IdType, SizeType> pooled_order_pos_;
 	decltype(pooled_order_pos_.container()) &order_pos_;
+
+	/// \effects Push a order into indexed subheap
+	/// \param size The size of the subheap [0..size - 1]
+	/// \param order The order to insert
+	/// \complexity O(log n)
+	/// \returns Returns false if the order has lower priority then the last element in the heap. Otherwise returns true.
+	/// \remarks The order is not inserted into the book if the return value is false
 	bool push_heap(SizeType size, const OrderType &order) {
 		auto i = size;
 		auto p = (i - 1) / 2;
@@ -82,6 +103,9 @@ private:
 		orders_[i] = order;
 		return true;
 	}
+	/// \effects Pop the order at the peak of indexed subheap
+	/// \param root The root of the subheap [root..orders_.size() - 1]
+	/// \complexity O(log n)
 	void pop_heap(SizeType root) {
 		order_pos_.erase(orders_[root].id());
 		OrderType &order = *orders_.rbegin();

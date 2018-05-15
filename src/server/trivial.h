@@ -11,7 +11,10 @@ class Server {
 public:
 	Server() : exchange_(*this) {}
 
-	// assume clients always send legitimate data
+	/// \effects Listen on specified host and port
+	/// \param host The host to listen at
+	/// \param port The port to listen at
+	/// \remarks The behavior is undefined if clients send invalid data
 	void listen(const char *host, const char *port) {
 		sck_listen.listen(host, port);
 		std::uint8_t buf[sizeof(Request)];

@@ -3,7 +3,8 @@
 #include "src/order/order.h"
 
 namespace piex {
-// not thread safe
+
+/// \remark Not thread safe
 template <class T>
 class OrderBook {
 public:
@@ -16,24 +17,29 @@ public:
 	SizeType size() const {
 		return orders_.size();
 	}
+	
+	/// \remarks The behavior is undefined if the order book is empty
+	/// \complexity O(1)
 	OrderType &top() {
-		// no boundary check for performance
 		return *orders_.rbegin();
 	}
 	const OrderType &top() const {
 		return *orders_.rbegin();
 	}
-	// O(n)
+
+	/// \complexity O(n)
 	bool insert(const OrderType &order) {
 		auto iter = std::lower_bound(orders_.rbegin(), orders_.rend(), order);
 		orders_.insert(iter.base(), order);
 		return true;
 	}
-	// O(1)
+
+	/// \complexity O(1)
 	void pop() {
 		orders_.pop_back();
 	}
-	// O(n)
+
+	/// \complexity O(n)
 	bool remove(const typename OrderType::IdType &id) {
 		auto iter = std::find_if(orders_.begin(), orders_.end(), [&id](const OrderType& order) {
 			return order.id() == id;

@@ -13,6 +13,10 @@ inline int enable_option(int fd, int level, int option_name) {
 	return setsockopt(fd, level, option_name, &on, sizeof(on));
 }
 
+/// \effects Create a socket that has been bind or connected
+/// \param host The host to connect / bind
+/// \param port The port to connect / bind
+/// \param is_server Whether the socket is to bind or to connect
 inline int create_socket(const char *host, const char *port, bool is_server) {
 	int ret;
 	addrinfo hints = {

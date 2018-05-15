@@ -3,12 +3,16 @@
 #include "src/order/order.h"
 
 namespace piex {
+
+/// \requires Type T shall satisfy `EventHandler`
 template <class T>
 class Exchange {
 public:
 	using EventHandlerType = T;
 	explicit Exchange(EventHandlerType &handler) : handler_(handler) {}
 
+	/// \effects Process a order placement. This shall match order if possible and insert it to order book if not completely matched. `handler_` will be notified when finished
+	/// \param request The order placement request
 	void process_request(const Request::Place &request) {
 		if (request.order_type() == Request::BUY) {
 			const Order &order = request.order();
@@ -19,6 +23,8 @@ public:
 		}
 	}
 
+	/// \effects Process a order cancel. This shall remove order from the book. `handler_` will be notified of the results when finished.
+	/// \param request The order cancel request
 	void process_request(const Request::Cancel &request) {
 		if (request.order_type() == Request::BUY) {
 			remove_order_from_book(request, buy_book_);
@@ -31,6 +37,11 @@ private:
 	EventHandlerType &handler_;
 	OrderBook<BuyOrder> buy_book_;
 	OrderBook<SellOrder> sell_book_;
+
+	/// \effects Match a order with existing ones if possible. Then insert it into order book if not completely matched. `handler_` will be notified when finished.
+	/// \param request_order The order to insert
+	/// \param order_book The order book that `request_order` should go to
+	/// \param opposite_book The order book where the orders to be matched with are stored
 	template <class U, class V>
 	void insert_order_to_book(const U &request_order, OrderBook<U> &order_book, OrderBook<V> &opposite_book) {
 		U order = request_order;
@@ -67,6 +78,10 @@ private:
 		}
 		handler_.on_place({success, order.id()});
 	}
+
+	/// \effects Remove a order from the order book. `handler_` will be notified of the results when finished.
+	/// \param request The cancel request
+	/// \param order_book The order book where the order to cancel is expected to be stored
 	template <class U>
 	void remove_order_from_book(const Request::Cancel &request, OrderBook<U> &order_book) {
 		bool success = order_book.remove(request.id());

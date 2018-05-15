@@ -36,7 +36,7 @@ private:
 	T order_;
 };
 
-// not thread safe
+/// \remark Not thread safe
 template <class OrderType>
 class OrderBook {
 private:
@@ -54,25 +54,30 @@ public:
 	SizeType size() const {
 		return orders_.size();
 	}
+
+	/// \remarks The behavior is undefined if the order book is empty
+	/// \complexity O(1)
 	const OrderType &top() const {
-		// no boundary check for performance
 		return orders_.top()->order();
 	}
-	// O(log n)
+
+	/// \complexity Average O(log n); Worst O(n)
 	bool insert(const OrderType &order) {
 		Hook<OrderType> *ptr = std_allocator_.allocate(1);
 		new(ptr) Hook<OrderType>(order);
 		orders_.insert(*ptr);
 		return true;
 	}
-	// O(log n)
+
+	/// \complexity Average O(log n); Worst O(n)
 	void pop() {
 		auto it = orders_.top();
 		auto &data = *it;
 		orders_.erase(it);
 		std_allocator_.deallocate(&data, 1);
 	}
-	// O(log n)
+
+	/// \complexity Average O(log n); Worst O(n)
 	bool remove(const typename OrderType::IdType &id) {
 		auto it = orders_.find(id, OrderIdComp<Hook<OrderType>>());
 		if (it == orders_.end()) {
